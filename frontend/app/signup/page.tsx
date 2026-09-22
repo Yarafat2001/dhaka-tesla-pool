@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api, setToken, setStoredUser } from '@/lib/api';
 
 export default function SignupPage() {
@@ -9,6 +10,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [teslaName, setTeslaName] = useState('');
   const [teslaPlate, setTeslaPlate] = useState('');
   const [teslaCapacity, setTeslaCapacity] = useState(3);
@@ -37,32 +39,109 @@ export default function SignupPage() {
 
   return (
     <main className="page">
-      <h1>Create an account</h1>
+      <div className="brand">
+        <div className="logo">⚡</div>
+        <div>
+          <h1>Create an account</h1>
+          <p>Pick your side of the Tesla.</p>
+        </div>
+      </div>
+
       <form className="card" onSubmit={handleSubmit}>
         <label>I am a</label>
-        <select value={role} onChange={(e) => setRole(e.target.value as 'PASSENGER' | 'DRIVER')}>
-          <option value="PASSENGER">Passenger</option>
-          <option value="DRIVER">Driver</option>
-        </select>
+        <div className="role-cards">
+          <button
+            type="button"
+            className={`role-card ${role === 'PASSENGER' ? 'active' : ''}`}
+            onClick={() => setRole('PASSENGER')}
+          >
+            <span className="role-emoji">🙋</span>
+            <strong>Passenger</strong>
+            <span className="muted">Request rides, split fares</span>
+          </button>
+          <button
+            type="button"
+            className={`role-card ${role === 'DRIVER' ? 'active' : ''}`}
+            onClick={() => setRole('DRIVER')}
+          >
+            <span className="role-emoji">🚗</span>
+            <strong>Driver</strong>
+            <span className="muted">Bring a Tesla, earn per trip</span>
+          </button>
+        </div>
+
         <label htmlFor="name">Name</label>
         <input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
         <label htmlFor="phone">Phone</label>
-        <input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        <input
+          id="phone"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="017XXXXXXXX"
+          required
+        />
         <label htmlFor="password">Password</label>
-        <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <div className="input-wrap">
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button
+            type="button"
+            className="reveal"
+            onClick={() => setShowPassword((v) => !v)}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
+
         {role === 'DRIVER' && (
-          <>
+          <div className="appear">
+            <hr className="divider" />
             <label htmlFor="teslaName">Tesla name</label>
-            <input id="teslaName" value={teslaName} onChange={(e) => setTeslaName(e.target.value)} placeholder="e.g. Bullet" required />
+            <input
+              id="teslaName"
+              value={teslaName}
+              onChange={(e) => setTeslaName(e.target.value)}
+              placeholder="e.g. Bullet"
+              required
+            />
             <label htmlFor="teslaPlate">Plate</label>
-            <input id="teslaPlate" value={teslaPlate} onChange={(e) => setTeslaPlate(e.target.value)} required />
+            <input
+              id="teslaPlate"
+              value={teslaPlate}
+              onChange={(e) => setTeslaPlate(e.target.value)}
+              required
+            />
             <label htmlFor="teslaCapacity">Seat capacity</label>
-            <input id="teslaCapacity" type="number" min={1} value={teslaCapacity} onChange={(e) => setTeslaCapacity(Number(e.target.value))} required />
-          </>
+            <div className="segmented">
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`seg-btn ${teslaCapacity === n ? 'active' : ''}`}
+                  onClick={() => setTeslaCapacity(n)}
+                >
+                  {n} seat{n > 1 ? 's' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
+
         {error && <div className="error">{error}</div>}
-        <button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</button>
+        <button type="submit" className={loading ? 'loading' : ''} disabled={loading}>
+          {loading ? 'Creating...' : 'Create account'}
+        </button>
       </form>
+
+      <p className="muted" style={{ textAlign: 'center' }}>
+        Already have an account?{' '}
+        <Link className="link" href="/login">Sign in</Link>
+      </p>
     </main>
   );
 }
