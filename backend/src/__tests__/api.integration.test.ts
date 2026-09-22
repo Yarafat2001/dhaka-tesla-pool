@@ -63,6 +63,18 @@ beforeAll(async () => {
     );
   }
 
+  // Belt and braces: verify the *actual connection* landed in the test schema.
+  // A string check on DATABASE_URL would not catch a .env file quietly winning
+  // over the environment, and this suite deletes rows in afterAll.
+  const [{ current_schema: connectedSchema }] = await prisma.$queryRaw<
+    Array<{ current_schema: string }>
+  >`SELECT current_schema() AS current_schema`;
+  if (connectedSchema !== 'test') {
+    throw new Error(
+      `Refusing to run: connected to schema "${connectedSchema}", expected "test" - demo data would be at risk`
+    );
+  }
+
   for (const z of ZONES) {
     const created = await prisma.zone.upsert({ where: { name: z.name }, update: z, create: z });
     zone[z.name] = created.id;

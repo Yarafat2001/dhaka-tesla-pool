@@ -245,7 +245,7 @@ shows the solo price and the shared price before you commit), then as Rafiq
 request Banani → Gulshan 1 - he pools onto the same Tesla and Nusrat's fare drops
 to the pooled ৳68.40 (visible via "What happened on this ride?"). Sign in as
 Jashim to see 3/3 seats, accept the pool, arrive, start, complete; the trip then
-appears in his history with ৳291.60 earned.
+appears in his history with ৳255.60 earned (৳68.40 + ৳60.00 + ৳127.20).
 
 ## API overview
 
