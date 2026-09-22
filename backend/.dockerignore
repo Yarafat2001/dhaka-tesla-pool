@@ -1,0 +1,21 @@
+# Keep the build context to source only.
+#
+# Without this, `COPY . .` copies whatever the developer happens to have on
+# their machine into the image - most damagingly the host `node_modules`, which
+# would overwrite the Linux modules installed inside the container with
+# platform-specific ones (Windows/arm64 binaries in a Debian image).
+node_modules
+dist
+coverage
+
+# Secrets never belong in an image layer. The variables this app needs are
+# supplied at runtime by compose (`env_file` + `environment`), so the image
+# does not need them, and baking them in would leak them to anyone who can
+# pull the image regardless of what .gitignore says.
+.env
+.env.local
+
+*.log
+.git
+.gitignore
+Dockerfile
