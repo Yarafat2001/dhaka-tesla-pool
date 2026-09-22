@@ -146,7 +146,7 @@ export async function requestRide(params: {
       where: {
         isOnline: true,
         capacity: { gte: seats },
-        pools: { none: { status: { in: ['FORMING', 'ACTIVE'] } } },
+        pools: { none: { status: { in: ['FORMING', 'ACCEPTED', 'ACTIVE'] } } },
       },
     });
 

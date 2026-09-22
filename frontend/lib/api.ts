@@ -50,6 +50,11 @@ export const api = {
   setOnline: (isOnline: boolean) =>
     request('/api/driver/online', { method: 'POST', body: JSON.stringify({ isOnline }) }),
   myTesla: () => request('/api/driver/me'),
+  driverHistory: () => request('/api/driver/history'),
+  accept: (poolId: string) => request(`/api/driver/pools/${poolId}/accept`, { method: 'POST' }),
+  wallet: () => request('/api/wallet'),
+  topUpWallet: (amountPoisha: number) =>
+    request('/api/wallet/topup', { method: 'POST', body: JSON.stringify({ amountPoisha }) }),
   arrive: (poolId: string) => request(`/api/driver/pools/${poolId}/arrive`, { method: 'POST' }),
   start: (poolId: string) => request(`/api/driver/pools/${poolId}/start`, { method: 'POST' }),
   complete: (poolId: string) => request(`/api/driver/pools/${poolId}/complete`, { method: 'POST' }),

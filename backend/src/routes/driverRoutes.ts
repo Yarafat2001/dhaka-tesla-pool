@@ -27,6 +27,23 @@ driverRouter.get('/me', async (req, res, next) => {
   }
 });
 
+driverRouter.get('/history', async (req, res, next) => {
+  try {
+    res.json(await driverService.getDriverHistory(req.auth!.userId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+driverRouter.post('/pools/:poolId/accept', async (req, res, next) => {
+  try {
+    const pool = await driverService.acceptPool(req.params.poolId, req.auth!.userId);
+    res.json(pool);
+  } catch (err) {
+    next(err);
+  }
+});
+
 driverRouter.post('/pools/:poolId/arrive', async (req, res, next) => {
   try {
     const pool = await driverService.markDriverArrived(req.params.poolId, req.auth!.userId);
