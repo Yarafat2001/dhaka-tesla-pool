@@ -14,6 +14,29 @@ interface RideRequest {
 }
 interface Pool { id: string; status: string; seatsUsed: number; rideRequests: RideRequest[]; }
 interface Tesla { id: string; name: string; capacity: number; isOnline: boolean; pools: Pool[]; }
+interface HistoryPassenger {
+  name: string;
+  seats: number;
+  status: string;
+  from: string;
+  to: string;
+  farePoisha: number;
+  paymentMethod: string;
+  paymentStatus: string;
+}
+interface HistoryPool {
+  id: string;
+  status: string;
+  seatsUsed: number;
+  startedAt: string;
+  finishedAt: string;
+  totalEarnedPoisha: number;
+  passengers: HistoryPassenger[];
+}
+interface DriverHistory {
+  tesla: { id: string; name: string; capacity: number };
+  pools: HistoryPool[];
+}
 
 function fmt(poisha: number) {
   return `৳${(poisha / 100).toFixed(2)}`;
@@ -22,12 +45,15 @@ function fmt(poisha: number) {
 export default function DriverPage() {
   const router = useRouter();
   const [tesla, setTesla] = useState<Tesla | null>(null);
+  const [history, setHistory] = useState<DriverHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const user = getStoredUser();
 
   const refresh = useCallback(async () => {
-    const t = await api.myTesla();
+    const [t, h] = await Promise.all([api.myTesla(), api.driverHistory()]);
     setTesla(t);
+    setHistory(h);
   }, []);
 
   useEffect(() => {
@@ -35,7 +61,9 @@ export default function DriverPage() {
       router.replace('/login');
       return;
     }
-    refresh().catch((e) => setError(e.message));
+    refresh()
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load'))
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -49,8 +77,9 @@ export default function DriverPage() {
     }
   }
 
-  async function act(action: 'arrive' | 'start' | 'complete', poolId: string) {
+  async function act(action: 'accept' | 'arrive' | 'start' | 'complete', poolId: string) {
     try {
+      if (action === 'accept') await api.accept(poolId);
       if (action === 'arrive') await api.arrive(poolId);
       if (action === 'start') await api.start(poolId);
       if (action === 'complete') await api.complete(poolId);
@@ -91,7 +120,8 @@ export default function DriverPage() {
       {error && <div className="error">{error}</div>}
 
       <h2>Active pools</h2>
-      {(!tesla || tesla.pools.length === 0) && (
+      {loading && <p className="muted">Loading your Tesla...</p>}
+      {!loading && (!tesla || tesla.pools.length === 0) && (
         <p className="muted">No active pool. Go online and wait for passengers to request rides.</p>
       )}
       {tesla?.pools.map((pool) => (
@@ -112,10 +142,49 @@ export default function DriverPage() {
             </div>
           ))}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button onClick={() => act('arrive', pool.id)}>Arrived</button>
-            <button onClick={() => act('start', pool.id)}>Start trip</button>
-            <button onClick={() => act('complete', pool.id)}>Complete</button>
+            {pool.status === 'FORMING' && (
+              <button onClick={() => act('accept', pool.id)}>Accept pool</button>
+            )}
+            {pool.status === 'ACCEPTED' && (
+              <>
+                <button onClick={() => act('arrive', pool.id)}>Arrived</button>
+                <button onClick={() => act('start', pool.id)}>Start trip</button>
+              </>
+            )}
+            {pool.status === 'ACTIVE' && (
+              <button onClick={() => act('complete', pool.id)}>Complete</button>
+            )}
           </div>
+        </div>
+      ))}
+
+      <h2>Trip history</h2>
+      {loading && <p className="muted">Loading trip history...</p>}
+      {!loading && history?.pools.length === 0 && (
+        <p className="muted">No finished trips yet.</p>
+      )}
+      {history?.pools.map((pool) => (
+        <div className="card" key={pool.id}>
+          <div className="row">
+            <span className={`badge ${pool.status}`}>{pool.status}</span>
+            <span>{fmt(pool.totalEarnedPoisha)} earned</span>
+          </div>
+          <p className="muted">
+            {pool.seatsUsed} seat(s) &middot; finished {new Date(pool.finishedAt).toLocaleString()}
+          </p>
+          {pool.passengers.map((p, i) => (
+            <div key={i} style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+              <div className="row">
+                <strong>{p.name}</strong>
+                <span className="muted">
+                  {fmt(p.farePoisha)} &middot; {p.paymentMethod}/{p.paymentStatus}
+                </span>
+              </div>
+              <p className="muted">
+                {p.from} &rarr; {p.to} &middot; {p.seats} seat(s) &middot; {p.status}
+              </p>
+            </div>
+          ))}
         </div>
       ))}
     </main>

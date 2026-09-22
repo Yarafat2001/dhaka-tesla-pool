@@ -92,6 +92,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .badge.MATCHED, .badge.DRIVER_ARRIVED { background: #2b3a2f; color: var(--accent); }
+.badge.ACCEPTED { background: #2b3a2f; color: var(--accent); }
 .badge.STARTED { background: #2b3a2f; color: var(--accent); }
 .badge.COMPLETED { background: #1f2937; color: #8b98a9; }
 .badge.CANCELLED { background: #3a2323; color: var(--danger); }

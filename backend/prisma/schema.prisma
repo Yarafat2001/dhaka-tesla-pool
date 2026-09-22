@@ -26,7 +26,8 @@ enum RideStatus {
 }
 
 enum PoolStatus {
-  FORMING // accepting more compatible requests, Tesla not yet dispatched
+  FORMING // accepting more compatible requests, driver hasn't committed yet
+  ACCEPTED // driver has accepted this pool; no further riders can join
   ACTIVE // Tesla en route / trip in progress
   COMPLETED
   CANCELLED
@@ -141,6 +142,7 @@ model RideRequest {
   dropoffZone    Zone       @relation("DropoffZone", fields: [dropoffZoneId], references: [id])
   seats          Int        @default(1)
   status         RideStatus @default(REQUESTED)
+  paymentMethod  PaymentMethod @default(CASH) // chosen by the passenger at request time
   poolId         String?
   pool           Pool?      @relation(fields: [poolId], references: [id])
   estimatedFarePoisha Int

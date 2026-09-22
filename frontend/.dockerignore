@@ -1,0 +1,19 @@
+# Keep the build context to source only - in particular the host `node_modules`,
+# which would otherwise overwrite the container's Linux modules via `COPY . .`.
+node_modules
+.next
+out
+coverage
+*.log
+.git
+.gitignore
+Dockerfile
+
+# NOTE: `.env` is deliberately NOT ignored here. Next.js inlines
+# NEXT_PUBLIC_* at build time, so the web image has to see
+# `NEXT_PUBLIC_API_URL` while it builds. The only value this project puts in
+# `frontend/.env` is that public API URL - nothing secret. If the frontend ever
+# gains a private build-time secret, switch this to a build ARG instead of
+# shipping the file. `.env.local` is ignored because it is a per-developer
+# override that should never define the shipped bundle.
+.env.local

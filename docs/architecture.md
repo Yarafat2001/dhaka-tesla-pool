@@ -76,3 +76,39 @@ When Rafiq requests two minutes later with the same pickup zone, the first
 `find FORMING pools` step finds Nusrat's pool, and the atomic
 `updateMany(... WHERE seatsUsed + n <= capacity)` claims a seat instead of
 opening a new pool - this is the pooling behavior in one sentence.
+
+## Driver-side lifecycle (Jashim accepts, drives, completes)
+
+```mermaid
+sequenceDiagram
+    participant J as Jashim (Browser)
+    participant API as Node API
+    participant DB as Postgres
+
+    J->>API: GET /api/driver/me
+    API->>DB: Tesla + pools in (FORMING | ACCEPTED | ACTIVE)
+    API-->>J: pool with 3 riders, seatsUsed 3/3
+    J->>API: POST /api/driver/pools/:id/accept
+    API->>DB: pool.status = ACCEPTED (pool locks; latecomers open a new pool)
+    J->>API: POST /api/driver/pools/:id/arrive
+    API->>DB: rides -> DRIVER_ARRIVED + StatusHistory rows (one transaction)
+    J->>API: POST /api/driver/pools/:id/start
+    API->>DB: rides -> STARTED, pool -> ACTIVE
+    J->>API: POST /api/driver/pools/:id/complete
+    API->>DB: rides -> COMPLETED, re-price pool, freeze finalFare (one transaction)
+    API->>DB: payment per rider: TESLAPAY debits wallet, CASH records PAID
+    API-->>J: pool COMPLETED
+```
+
+Out-of-order driver actions are rejected with `409` from pool-level guards
+(`domain/poolStateMachine.ts`), so a stale browser tab or a double tap cannot
+skip acceptance or restart a finished trip - asserted in the integration suite.
+
+## Logging
+
+`middleware/requestLogger.ts` writes one structured JSON line per request
+(method, path, status, duration, actor) with a generated request id that is also
+returned in the `x-request-id` response header and attached to unhandled 500s in
+`middleware/errorHandler.ts`. That is enough to follow a ride through the
+lifecycle - and to connect a bug report to the exact request that produced it -
+without adding a logging framework dependency.

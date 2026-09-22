@@ -10,6 +10,9 @@ const requestSchema = z.object({
   pickupZoneId: z.string().min(1),
   dropoffZoneId: z.string().min(1),
   seats: z.number().int().positive().default(1),
+  // Section 5: cash or the simulated TeslaPay wallet. Defaults to cash so
+  // existing clients (and the passenger UI before you pick) keep working.
+  paymentMethod: z.enum(['CASH', 'TESLAPAY']).default('CASH'),
 });
 
 rideRouter.post('/', async (req, res, next) => {
@@ -17,6 +20,22 @@ rideRouter.post('/', async (req, res, next) => {
     const input = requestSchema.parse(req.body);
     const ride = await rideService.requestRide({ passengerId: req.auth!.userId, ...input });
     res.status(201).json(ride);
+  } catch (err) {
+    next(err);
+  }
+});
+
+const estimateSchema = z.object({
+  pickupZoneId: z.string().min(1),
+  dropoffZoneId: z.string().min(1),
+});
+
+// Registered before the parameterised routes so `/estimate` is never treated as
+// a ride id.
+rideRouter.post('/estimate', async (req, res, next) => {
+  try {
+    const { pickupZoneId, dropoffZoneId } = estimateSchema.parse(req.body);
+    res.json(await rideService.estimateFare(pickupZoneId, dropoffZoneId));
   } catch (err) {
     next(err);
   }
