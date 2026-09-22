@@ -87,7 +87,7 @@ export async function requestRide(params: {
     }
   }
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // 1. Try to join an existing FORMING pool at this pickup zone with room.
     const candidatePools = await tx.pool.findMany({
       where: {
@@ -254,7 +254,7 @@ export async function listMyRides(passengerId: string) {
 }
 
 export async function cancelRide(rideRequestId: string, passengerId: string) {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const ride = await tx.rideRequest.findUnique({ where: { id: rideRequestId } });
     if (!ride) throw new AppError('Ride request not found', 404);
     if (ride.passengerId !== passengerId) {
