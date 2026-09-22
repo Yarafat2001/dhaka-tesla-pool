@@ -38,10 +38,20 @@ API_HOST_PORT=4100     # default 4000
 WEB_HOST_PORT=3000     # default 3000
 ```
 
-`NEXT_PUBLIC_API_URL` is derived from `API_HOST_PORT`, so the browser is pointed
-at the right port automatically. Remember that `NEXT_PUBLIC_*` is inlined by
-Next.js at **build** time - after changing the port, rebuild the web image
-(`docker compose up -d --build web`).
+Because Next.js inlines `NEXT_PUBLIC_*` at **build** time, the override has to
+reach the web build as well - the compose `environment:` value alone does not do
+it:
+
+1. set `API_HOST_PORT=4100` in the repo-root `.env` (compose publishes the API
+   there),
+2. set `NEXT_PUBLIC_API_URL=http://localhost:4100` in `frontend/.env` (Next.js
+   reads it when the bundle is built), and
+3. rebuild the web image: `docker compose up -d --build web`.
+
+Skipping step 2 produces a web app that builds and serves fine but calls port
+4000 in the browser - a confusing failure, and exactly the one this escape hatch
+exists to avoid. The committed `frontend/.env.example` keeps the default 4000,
+so a normal `docker compose up --build` needs no thought.
 
 ## 2. Free-tier hosting (no payment required)
 
@@ -91,7 +101,7 @@ committing" check worth doing rather than assuming.
 | `DATABASE_URL` | backend | Postgres connection string |
 | `JWT_SECRET` | backend | signs/verifies JWTs - set a long random value in any real deployment |
 | `PORT` | backend | API port (default 4000) |
-| `NEXT_PUBLIC_API_URL` | frontend | API base URL, inlined at build time |
+| `NEXT_PUBLIC_API_URL` | frontend (`frontend/.env`) | API base URL, inlined at build time - rebuild the web image after changing it |
 | `API_HOST_PORT` / `WEB_HOST_PORT` | repo root (compose only) | host port overrides |
 
 Real secrets never belong in the repo: `backend/.env` and `frontend/.env` are
