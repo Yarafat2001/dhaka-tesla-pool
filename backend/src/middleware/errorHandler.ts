@@ -13,8 +13,19 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({ error: err.message });
   }
+  // Unexpected failures get logged with the same request id the client saw in
+  // the x-request-id header, so a bug report can be traced to one request.
   // eslint-disable-next-line no-console
-  console.error(err);
+  console.error(
+    JSON.stringify({
+      level: 'error',
+      requestId: res.getHeader('x-request-id'),
+      method: req.method,
+      path: req.originalUrl,
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    })
+  );
   return res.status(500).json({ error: 'Internal server error' });
 }
 
