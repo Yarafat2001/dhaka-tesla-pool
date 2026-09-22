@@ -49,7 +49,7 @@ erDiagram
     Pool {
         string id PK
         string teslaId FK
-        enum status "FORMING|ACTIVE|COMPLETED|CANCELLED"
+        enum status "FORMING|ACCEPTED|ACTIVE|COMPLETED|CANCELLED"
         int seatsUsed
     }
 
@@ -60,6 +60,7 @@ erDiagram
         string dropoffZoneId FK
         int seats
         enum status
+        enum paymentMethod "CASH|TESLAPAY"
         string poolId FK "nullable - null while unmatched"
         int estimatedFarePoisha
         int finalFarePoisha "nullable until COMPLETED"
@@ -110,3 +111,14 @@ erDiagram
   change to `User`.
 - **Money is `Int` (poisha) everywhere**, never `Decimal`/`Float` - see
   `docs/fare-model.md`.
+- **`Pool.status` includes `ACCEPTED`.** A pool is `FORMING` while more riders
+  may join, `ACCEPTED` once the driver commits (which locks it - latecomers get
+  their own pool), then `ACTIVE` when the trip starts. Without this state the
+  driver's "accept" capability from Section 3 had nowhere to live, and a pool
+  could silently change shape after a driver had agreed to drive it. Rules live
+  in `backend/src/domain/poolStateMachine.ts`.
+- **`RideRequest.paymentMethod`** records the passenger's choice of `CASH` or
+  `TESLAPAY` at request time, so the settlement path is known before the trip
+  starts (and can be validated against the wallet up front - see
+  `backend/src/domain/payment.ts`). The matching `Payment` row is written when
+  the trip completes.

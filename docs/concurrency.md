@@ -77,3 +77,14 @@ same test file demonstrates in isolation (20 concurrent claimants against a
   pool / open a new one" within the same HTTP request - fine at this
   scale, but a queue-based retry with backoff would be more robust under
   heavy contention (see bonus doc).
+
+## Where this is actually asserted
+
+- `backend/src/__tests__/concurrency.test.ts` - the naive-vs-atomic contrast in
+  isolation (`NaivePoolStore` overbooks; `AtomicPoolStore` never does, including
+  20 simultaneous claimants against 3 seats).
+- `backend/src/__tests__/api.integration.test.ts` - the same property through the
+  real stack: two simultaneous `POST /api/rides` for a 1-seat Tesla produce
+  exactly one `MATCHED` and one `REQUESTED`, and `Pool.seatsUsed` ends at exactly
+  `Tesla.capacity` (never 2). This is the version that would catch a regression
+  in the Prisma `updateMany` clause itself, which the in-memory test cannot.
