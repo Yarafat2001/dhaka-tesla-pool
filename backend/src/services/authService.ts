@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { signToken } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
@@ -27,7 +28,7 @@ export async function signup(input: SignupInput) {
 
   // A driver's Tesla is created in the same transaction as their User row
   // so we never end up with a driver who has no vehicle (or vice versa).
-  const user = await prisma.$transaction(async (tx) => {
+  const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const created = await tx.user.create({
       data: {
         name: input.name,
