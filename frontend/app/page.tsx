@@ -15,8 +15,15 @@ export default function Home() {
   }, [router]);
   return (
     <main className="page">
-      <h1>Dhaka Tesla Pool</h1>
-      <p className="subtitle">Share a seat. Split the fare. Survive Dhaka traffic.</p>
+      <div className="splash">
+        <div className="avatar logo">⚡</div>
+        <h1>Dhaka Tesla Pool</h1>
+        <p className="subtitle" style={{ marginBottom: 0 }}>
+          Share a seat. Split the fare. Survive Dhaka traffic.
+        </p>
+        <span className="spin" aria-hidden="true" />
+        <p className="muted" style={{ marginTop: 10 }}>Taking you to your ride&hellip;</p>
+      </div>
     </main>
   );
 }
