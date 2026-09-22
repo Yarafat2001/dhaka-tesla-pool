@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/index.js",
     "test": "jest --runInBand",
     "test:integration": "jest --config jest.integration.config.js",

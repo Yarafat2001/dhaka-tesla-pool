@@ -1,0 +1,9 @@
+{
+  // Production build config: `npm run build` uses this so tests never end up in
+  // dist/ (and so a production-only install, which omits @types/jest, can still
+  // build). tsconfig.json deliberately includes the tests so editors and
+  // `npm run typecheck` check them with the real project settings and the
+  // generated Prisma client types instead of in an inferred fallback project.
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "src/__tests__"]
+}
