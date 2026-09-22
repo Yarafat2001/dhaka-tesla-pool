@@ -52,10 +52,12 @@ to reproduce them.
 | ![Login](docs/screenshots/01-login.png) | Seeded demo cast listed on the login screen |
 | ![Passenger](docs/screenshots/02-passenger.png) | Live fare estimate (solo vs. shared), payment method, wallet balance, ride list with statuses |
 | ![Audit trail](docs/screenshots/03-ride-audit-trail.png) | "What happened on this ride?" - every status change for one ride |
-| ![Driver](docs/screenshots/04-driver.png) | Pool with 3 passengers / 3 seats, Accept → Arrived → Start → Complete, and trip history with earnings |
+| ![Driver](docs/screenshots/04-driver.png) | Bullet's 3 seats, a pool waiting for acceptance (`Accept pool`), and trip history with per-passenger payments and earnings |
 
-> To regenerate them: `docs/screenshots/README.md` has the exact steps. A short
-> screen recording is linked under [Demo video](#demo-video).
+> These are real captures from the running stack, not mockups, and they are
+> committed - the README renders them without any manual step. To regenerate
+> them (or capture your own GIF), `docs/screenshots/README.md` has the exact
+> steps.
 
 ## Assumptions
 
@@ -166,6 +168,23 @@ PORT=4000
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000
 ```
+
+`.env.example` (root, **optional** - only for host-port overrides):
+
+```
+API_HOST_PORT=4000
+WEB_HOST_PORT=3000
+```
+
+The compose file already defaults to those two values, so the root `.env` is
+only needed when a host port is unavailable. If you change `API_HOST_PORT`, also
+point `NEXT_PUBLIC_API_URL` in `frontend/.env` at the same port, because the
+browser calls the API directly. This is exactly the portability escape hatch
+documented in `docs/deployment.md`: on the Windows machine this was developed
+on, Hyper-V/WinNAT reserves TCP `3998-4097`, so `4000` cannot be bound and the
+stack runs on `4100` without any code change.
+
+`.env` files are gitignored; only the `.env.example` files are committed.
 
 ## Running with Docker (recommended)
 
@@ -316,8 +335,9 @@ illegal state transition, `404` unknown ride/pool).
   reasoned through in the scaling doc rather than built here.
 - **Frontend has minimal styling by design** (Section 6: "a simple, clean
   interface is enough") - plain CSS, no component library.
-- **Screenshots and the demo video** are the last manual step for submission -
-  `docs/screenshots/README.md` explains how to capture them.
+- **The demo video is the one manual step left** (Section 13) - everything else,
+  including the screenshots, is committed and reproducible. See
+  [Demo video](#demo-video).
 
 ## Next improvements
 
@@ -329,9 +349,13 @@ illegal state transition, `404` unknown ride/pool).
 
 ## AI Usage
 
-Tools used: Claude (Anthropic), used throughout for scaffolding the
-Express/Prisma backend, the Next.js frontend, Docker configuration, tests,
-and this documentation, working from the assignment brief.
+Tools used: **Claude** (Anthropic) for the bulk of the scaffolding - the
+Express/Prisma backend, Next.js frontend, Docker configuration, tests, and
+documentation - working from the assignment brief; and **Cline** (the VS Code
+agent, also Claude-backed) for the verification, debugging and fix passes
+described below. No part of the system was left unread: every file here has been
+run, and the failures found by running it are listed as bugs below rather than
+tidied away.
 
 - **One accepted suggestion:** modeling `Pool` as the unit of a physical
   trip (with `RideRequest.poolId` nullable until matched) rather than a
@@ -345,14 +369,30 @@ and this documentation, working from the assignment brief.
   split would overcharge the shorter leg or undercharge the longer one.
   Changed to per-passenger distance-based fare with a discount instead of a
   split, which is what's implemented and tested.
-- **One bug the AI-written code had, found by running it:** the first version
-  priced a ride once, at request time, so the passenger who *opened* a pool kept
-  paying the undiscounted solo fare (৳78.00) while the passenger who joined got
-  20% off (৳60.00) - contradicting the worked example in `docs/fare-model.md`.
-  Fares are now re-derived from current pool membership
-  (`repricePoolFares`), the documented ৳68.40 for Nusrat holds live, and both the
-  unit tests and the API integration suite assert it. This is the kind of thing
-  that only shows up when the system is actually run end to end.
+- **Bugs the AI-written code had, found by running it** (not by reading it):
+  - The first version priced a ride once, at request time, so the passenger who
+    *opened* a pool kept paying the undiscounted solo fare (৳78.00) while the
+    passenger who joined got 20% off (৳60.00) - contradicting the worked example
+    in `docs/fare-model.md`. Fares are now re-derived from current pool
+    membership (`repricePoolFares`), the documented ৳68.40 for Nusrat holds live,
+    and both the unit tests and the API integration suite assert it.
+  - The API container's healthcheck used `wget`, which does not exist in
+    `node:20-slim`, so the API could never report healthy. It now probes with
+    Node's built-in `fetch`.
+  - "Complete trip" fired payments only for the requesting ride, leaving fellow
+    pool members unsettled - the `Payment` table stayed empty. Completion now
+    settles every non-cancelled ride in the pool.
+- **What running it caught that the docs had wrong:** the README's demo
+  walkthrough originally claimed ৳291.60 of driver earnings for the
+  three-passenger story. Summing the fares the system actually charges -
+  Nusrat 6840 + Rafiq 6000 + Shirin 12720 = 25560 poisha - gives ৳255.60, so
+  the walkthrough was corrected against live output rather than left plausible
+  but wrong. The hand-check is: Shirin's Banani → Dhanmondi leg is 8.1 km, so
+  `3000 + round(8.1 × 1500) = 15150` solo, minus the 20% distance discount
+  `round(12150 × 0.2) = 2430` → **12720**. Section 16 warns against polishing
+  the frontend while data integrity is broken; the same applies to docs that
+  drift from behaviour, which is why these figures are asserted in tests where
+  possible and re-verified against the running stack where not.
 
 ## Demo video
 
