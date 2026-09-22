@@ -437,4 +437,25 @@ settlement, and both test suites.
 Branch story: feature work lands on `feature/*` (or `fix/*`, `test/*`, `docs/*`)
 branches with one logical change per commit, merges into `master`, is
 integration-checked on `pre-release`, and is cut as `release/v1.0.0` — the
-tagged submission point that the demo video and this README describe.
+tagged submission point (`git tag v1.0.0`) that the demo video and this README
+describe.
+
+### What was verified at the release point
+
+Against `release/v1.0.0`, starting from a wiped database (`docker compose down
+-v`, so the stack rebuilt its schema and demo data from nothing):
+
+| Check | Result |
+|---|---|
+| `docker compose up -d` on a fresh volume | db healthy → 3 migrations applied → seed ran → api healthy, web serving on `:3000` |
+| `npm test` (unit, no database) | **41/41** passing, 6 suites |
+| Integration suite inside the built api image | **22/22** passing |
+| End-to-end smoke run against the live stack | **30/30** checks passing |
+
+The smoke run is the one that exercises the story end to end: the seeded logins,
+Nusrat opening a pool at 7800 poisha and being re-priced to 6840 when Rafiq
+joins, Shirin taking the last of Bullet's 3 seats, a 4th rider failing to
+overbook, a passenger getting `403` on someone else's ride, the full
+`ACCEPTED → ARRIVED → STARTED → COMPLETED` lifecycle, fares frozen at
+completion, TeslaPay debited by exactly 6840 poisha, and `409` when trying to
+cancel an already-completed ride.
