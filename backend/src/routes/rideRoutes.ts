@@ -25,6 +25,22 @@ rideRouter.post('/', async (req, res, next) => {
   }
 });
 
+const estimateSchema = z.object({
+  pickupZoneId: z.string().min(1),
+  dropoffZoneId: z.string().min(1),
+});
+
+// Registered before the parameterised routes so `/estimate` is never treated as
+// a ride id.
+rideRouter.post('/estimate', async (req, res, next) => {
+  try {
+    const { pickupZoneId, dropoffZoneId } = estimateSchema.parse(req.body);
+    res.json(await rideService.estimateFare(pickupZoneId, dropoffZoneId));
+  } catch (err) {
+    next(err);
+  }
+});
+
 rideRouter.get('/mine', async (req, res, next) => {
   try {
     const rides = await rideService.listMyRides(req.auth!.userId);

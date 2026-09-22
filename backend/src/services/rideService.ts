@@ -202,8 +202,42 @@ export async function requestRide(params: {
   });
 }
 
+/**
+ * Fare estimate without creating a ride - what the passenger UI shows while
+ * choosing zones, so Section 3's "see estimated fare" happens *before*
+ * committing to a request rather than after. Returns both the solo and the
+ * pooled price so the UI can show what sharing would save.
+ */
+export async function estimateFare(pickupZoneId: string, dropoffZoneId: string) {
+  if (pickupZoneId === dropoffZoneId) {
+    throw new AppError('pickup and dropoff zones must differ', 400);
+  }
+  const distanceRow = await prisma.zoneDistance.findUnique({
+    where: { fromZoneId_toZoneId: { fromZoneId: pickupZoneId, toZoneId: dropoffZoneId } },
+  });
+  if (!distanceRow) {
+    throw new AppError('No known distance between these zones', 400);
+  }
+
+  return {
+    distanceKm: distanceRow.distanceKm,
+    solo: calculateFare({ distanceKm: distanceRow.distanceKm, isPooled: false }),
+    pooled: calculateFare({ distanceKm: distanceRow.distanceKm, isPooled: true }),
+  };
+}
+
 export async function getRideRequest(rideRequestId: string, requesterId: string) {
-  const ride = await prisma.rideRequest.findUnique({ where: { id: rideRequestId } });
+  const ride = await prisma.rideRequest.findUnique({
+    where: { id: rideRequestId },
+    include: {
+      pickupZone: true,
+      dropoffZone: true,
+      payment: true,
+      // The append-only audit trail, ordered oldest-first: this is what lets a
+      // passenger answer "what actually happened on my ride?" (Section 2).
+      statusHistory: { orderBy: { createdAt: 'asc' } },
+    },
+  });
   if (!ride) throw new AppError('Ride request not found', 404);
   if (ride.passengerId !== requesterId) {
     // Each passenger sees only their own fare/status (Section 2).

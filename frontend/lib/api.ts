@@ -55,6 +55,12 @@ export const api = {
   wallet: () => request('/api/wallet'),
   topUpWallet: (amountPoisha: number) =>
     request('/api/wallet/topup', { method: 'POST', body: JSON.stringify({ amountPoisha }) }),
+  ride: (id: string) => request(`/api/rides/${id}`),
+  estimateFare: (pickupZoneId: string, dropoffZoneId: string) =>
+    request('/api/rides/estimate', {
+      method: 'POST',
+      body: JSON.stringify({ pickupZoneId, dropoffZoneId }),
+    }),
   arrive: (poolId: string) => request(`/api/driver/pools/${poolId}/arrive`, { method: 'POST' }),
   start: (poolId: string) => request(`/api/driver/pools/${poolId}/start`, { method: 'POST' }),
   complete: (poolId: string) => request(`/api/driver/pools/${poolId}/complete`, { method: 'POST' }),
