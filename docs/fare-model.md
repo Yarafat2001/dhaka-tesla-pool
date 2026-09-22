@@ -34,6 +34,28 @@ This exact calculation is asserted in
 `ZoneDistance` matrix (`backend/prisma/seed.ts`), not a routing API
 (Section 4).
 
+## Estimates move while a pool is forming
+
+`estimatedFarePoisha` is re-derived from *current* pool membership, not frozen
+at request time. `repricePoolFares` (`rideService.ts`) runs whenever that
+membership changes: a rider joins, a rider cancels, or the trip completes and
+fares are frozen.
+
+That matters for the passenger who *opens* a pool, because at that instant they
+are riding alone:
+
+| Nusrat's state | riders in pool | isPooled | estimatedFarePoisha |
+|---|---|---|---|
+| opens the pool alone | 1 | false | 3000 + 4800 = **7800** |
+| Rafiq joins | 2 | true | 3000 + 4800 - 960 = **6840** |
+| Rafiq and Shirin both cancel | 1 | false | back to **7800** |
+
+Without this, the opener would keep paying the solo fare while the joiner got
+20% off for the same shared ride - the exact asymmetry called out in the
+README's "one rejected suggestion" note. The amount frozen as
+`finalFarePoisha` at `COMPLETED` is the authoritative one; the estimate is
+exactly that, an estimate, and it is allowed to improve as the pool fills.
+
 ## Why integer poisha, not decimal/float
 
 - BDT has no denomination smaller than poisha (1 taka = 100 poisha), so

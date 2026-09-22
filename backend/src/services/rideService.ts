@@ -1,7 +1,43 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
-import { calculateFare } from '../domain/fare';
+import { calculateFare, isPooledPricing } from '../domain/fare';
+import { canAffordWithWallet, PaymentMethod } from '../domain/payment';
 import { assertTransition, isCancellable, RideStatus } from '../domain/stateMachine';
+
+/**
+ * Re-derives every non-cancelled rider's fare in a pool from *current* pool
+ * membership, so all members are always priced on the same basis (see
+ * isPooledPricing in domain/fare.ts). Called whenever membership changes: a
+ * rider joins, a rider cancels, or the trip completes and fares are frozen.
+ *
+ * Estimates are allowed to move while a pool is forming (that is what an
+ * estimate is); finalFarePoisha, frozen at completion, is the authoritative
+ * value a passenger is charged.
+ */
+export async function repricePoolFares(tx: Prisma.TransactionClient, poolId: string) {
+  const riders = await tx.rideRequest.findMany({
+    where: { poolId, status: { not: 'CANCELLED' } },
+  });
+  const isPooled = isPooledPricing(riders.length);
+
+  for (const ride of riders) {
+    const distance = await tx.zoneDistance.findUnique({
+      where: {
+        fromZoneId_toZoneId: { fromZoneId: ride.pickupZoneId, toZoneId: ride.dropoffZoneId },
+      },
+    });
+    if (!distance) continue;
+
+    const { totalFarePoisha } = calculateFare({ distanceKm: distance.distanceKm, isPooled });
+    if (totalFarePoisha !== ride.estimatedFarePoisha) {
+      await tx.rideRequest.update({
+        where: { id: ride.id },
+        data: { estimatedFarePoisha: totalFarePoisha },
+      });
+    }
+  }
+}
 
 /**
  * Creates a ride request and attempts to match it into a compatible,
@@ -21,8 +57,9 @@ export async function requestRide(params: {
   pickupZoneId: string;
   dropoffZoneId: string;
   seats: number;
+  paymentMethod: PaymentMethod;
 }) {
-  const { passengerId, pickupZoneId, dropoffZoneId, seats } = params;
+  const { passengerId, pickupZoneId, dropoffZoneId, seats, paymentMethod } = params;
   if (seats < 1) throw new AppError('seats must be at least 1', 400);
   if (pickupZoneId === dropoffZoneId) {
     throw new AppError('pickup and dropoff zones must differ', 400);
@@ -33,6 +70,21 @@ export async function requestRide(params: {
   });
   if (!distanceRow) {
     throw new AppError('No known distance between these zones', 400);
+  }
+
+  if (paymentMethod === 'TESLAPAY') {
+    // Fail fast: a passenger shouldn't find out at the end of the trip that the
+    // wallet can't cover it. Checked against the *solo* fare, which is the most
+    // this trip can cost - pooling only ever discounts it further.
+    const passenger = await prisma.user.findUnique({ where: { id: passengerId } });
+    if (!passenger) throw new AppError('Passenger not found', 404);
+    const soloFare = calculateFare({ distanceKm: distanceRow.distanceKm, isPooled: false });
+    if (!canAffordWithWallet(passenger.walletBalancePoisha, soloFare.totalFarePoisha)) {
+      throw new AppError(
+        'Insufficient TeslaPay balance for this trip - top up your wallet or pay by cash',
+        400
+      );
+    }
   }
 
   return prisma.$transaction(async (tx) => {
@@ -65,6 +117,7 @@ export async function requestRide(params: {
           pickupZoneId,
           dropoffZoneId,
           seats,
+          paymentMethod,
           poolId: pool.id,
           status: 'MATCHED',
           estimatedFarePoisha: fare.totalFarePoisha,
@@ -79,7 +132,11 @@ export async function requestRide(params: {
           note: `Joined existing pool ${pool.id}`,
         },
       });
-      return rideRequest;
+
+      // The pool just gained a member: re-derive everyone's fare, so the
+      // passenger who opened the pool gets the shared-ride discount too.
+      await repricePoolFares(tx, pool.id);
+      return tx.rideRequest.findUniqueOrThrow({ where: { id: rideRequest.id } });
     }
 
     // 2. No compatible pool with room - open a new one on an idle,
@@ -89,7 +146,7 @@ export async function requestRide(params: {
       where: {
         isOnline: true,
         capacity: { gte: seats },
-        pools: { none: { status: { in: ['FORMING', 'ACTIVE'] } } },
+        pools: { none: { status: { in: ['FORMING', 'ACCEPTED', 'ACTIVE'] } } },
       },
     });
 
@@ -104,6 +161,7 @@ export async function requestRide(params: {
           pickupZoneId,
           dropoffZoneId,
           seats,
+          paymentMethod,
           status: 'REQUESTED',
           estimatedFarePoisha: fare.totalFarePoisha,
         },
@@ -125,6 +183,7 @@ export async function requestRide(params: {
         pickupZoneId,
         dropoffZoneId,
         seats,
+        paymentMethod,
         poolId: pool.id,
         status: 'MATCHED',
         estimatedFarePoisha: fare.totalFarePoisha,
@@ -143,8 +202,42 @@ export async function requestRide(params: {
   });
 }
 
+/**
+ * Fare estimate without creating a ride - what the passenger UI shows while
+ * choosing zones, so Section 3's "see estimated fare" happens *before*
+ * committing to a request rather than after. Returns both the solo and the
+ * pooled price so the UI can show what sharing would save.
+ */
+export async function estimateFare(pickupZoneId: string, dropoffZoneId: string) {
+  if (pickupZoneId === dropoffZoneId) {
+    throw new AppError('pickup and dropoff zones must differ', 400);
+  }
+  const distanceRow = await prisma.zoneDistance.findUnique({
+    where: { fromZoneId_toZoneId: { fromZoneId: pickupZoneId, toZoneId: dropoffZoneId } },
+  });
+  if (!distanceRow) {
+    throw new AppError('No known distance between these zones', 400);
+  }
+
+  return {
+    distanceKm: distanceRow.distanceKm,
+    solo: calculateFare({ distanceKm: distanceRow.distanceKm, isPooled: false }),
+    pooled: calculateFare({ distanceKm: distanceRow.distanceKm, isPooled: true }),
+  };
+}
+
 export async function getRideRequest(rideRequestId: string, requesterId: string) {
-  const ride = await prisma.rideRequest.findUnique({ where: { id: rideRequestId } });
+  const ride = await prisma.rideRequest.findUnique({
+    where: { id: rideRequestId },
+    include: {
+      pickupZone: true,
+      dropoffZone: true,
+      payment: true,
+      // The append-only audit trail, ordered oldest-first: this is what lets a
+      // passenger answer "what actually happened on my ride?" (Section 2).
+      statusHistory: { orderBy: { createdAt: 'asc' } },
+    },
+  });
   if (!ride) throw new AppError('Ride request not found', 404);
   if (ride.passengerId !== requesterId) {
     // Each passenger sees only their own fare/status (Section 2).
@@ -183,6 +276,8 @@ export async function cancelRide(rideRequestId: string, passengerId: string) {
         where: { id: ride.poolId },
         data: { seatsUsed: { decrement: ride.seats } },
       });
+      // Losing a rider can flip the survivors back to solo pricing.
+      await repricePoolFares(tx, ride.poolId);
     }
 
     await tx.statusHistory.create({
