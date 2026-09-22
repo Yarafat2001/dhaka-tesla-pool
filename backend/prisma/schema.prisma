@@ -1,0 +1,187 @@
+// Dhaka Tesla Pool - Database Schema
+// See docs/erd.md for the entity-relationship diagram and docs/fare-model.md
+// for how fares derive from ZoneDistance.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PASSENGER
+  DRIVER
+}
+
+enum RideStatus {
+  REQUESTED
+  MATCHED
+  DRIVER_ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+}
+
+enum PoolStatus {
+  FORMING // accepting more compatible requests, Tesla not yet dispatched
+  ACTIVE // Tesla en route / trip in progress
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TESLAPAY
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+// A user is either a passenger or a driver. Kept as a single table (not
+// separate Passenger/Driver tables) because auth, profile, and identity
+// concerns are identical; the Role enum plus an optional Tesla relation
+// is enough to distinguish them without duplicating auth logic.
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String   @unique
+  passwordHash String
+  role         Role
+  walletBalancePoisha Int @default(0) // simulated TeslaPay balance, integer poisha
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tesla         Tesla?          @relation("DriverTesla")
+  rideRequests  RideRequest[]   @relation("PassengerRequests")
+  statusChanges StatusHistory[] @relation("ChangedByUser")
+
+  @@index([role])
+}
+
+// A predefined Dhaka area. Kept as a flat lookup table rather than real
+// geocoding per Section 4 of the brief.
+model Zone {
+  id   String @id @default(uuid())
+  name String @unique // e.g. "Banani", "Gulshan 1", "Mohakhali"
+  lat  Float
+  lng  Float
+
+  distancesFrom ZoneDistance[] @relation("FromZone")
+  distancesTo   ZoneDistance[] @relation("ToZone")
+  pickupRides   RideRequest[]  @relation("PickupZone")
+  dropoffRides  RideRequest[]  @relation("DropoffZone")
+}
+
+// Symmetric zone-to-zone distance matrix, used for the distance component
+// of the fare model instead of a routing API (Section 4/5).
+model ZoneDistance {
+  id           String @id @default(uuid())
+  fromZoneId   String
+  toZoneId     String
+  fromZone     Zone   @relation("FromZone", fields: [fromZoneId], references: [id])
+  toZone       Zone   @relation("ToZone", fields: [toZoneId], references: [id])
+  distanceKm   Float
+
+  @@unique([fromZoneId, toZoneId])
+  @@index([fromZoneId])
+  @@index([toZoneId])
+}
+
+// A driver's vehicle. Kept separate from User (rather than columns on User)
+// because capacity/plate/status are vehicle attributes, and a 1:1 keeps the
+// door open for a driver swapping vehicles later without a migration.
+model Tesla {
+  id         String   @id @default(uuid())
+  driverId   String   @unique
+  driver     User     @relation("DriverTesla", fields: [driverId], references: [id])
+  name       String // e.g. "Bullet"
+  plate      String   @unique
+  capacity   Int // fixed seat count, e.g. 3
+  isOnline   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  pools Pool[]
+}
+
+// A Pool represents one physical trip a Tesla is running, which may carry
+// multiple RideRequests (passengers) at once, up to Tesla.capacity.
+// A solo ride is simply a Pool with one RideRequest - there is no separate
+// "ride" concept, which keeps the lifecycle and capacity logic in one place.
+model Pool {
+  id        String     @id @default(uuid())
+  teslaId   String
+  tesla     Tesla      @relation(fields: [teslaId], references: [id])
+  status    PoolStatus @default(FORMING)
+  seatsUsed Int        @default(0) // denormalized counter, kept in sync inside
+                                     // the same DB transaction that adds/removes
+                                     // a RideRequest - see docs/concurrency.md
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  rideRequests RideRequest[]
+
+  @@index([teslaId, status])
+}
+
+// One passenger's request. Belongs to a Pool once matched. seats > 1 means
+// the passenger is booking multiple seats for their own party.
+model RideRequest {
+  id             String     @id @default(uuid())
+  passengerId    String
+  passenger      User       @relation("PassengerRequests", fields: [passengerId], references: [id])
+  pickupZoneId   String
+  pickupZone     Zone       @relation("PickupZone", fields: [pickupZoneId], references: [id])
+  dropoffZoneId  String
+  dropoffZone    Zone       @relation("DropoffZone", fields: [dropoffZoneId], references: [id])
+  seats          Int        @default(1)
+  status         RideStatus @default(REQUESTED)
+  poolId         String?
+  pool           Pool?      @relation(fields: [poolId], references: [id])
+  estimatedFarePoisha Int
+  finalFarePoisha     Int?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  cancelledAt    DateTime?
+
+  statusHistory StatusHistory[]
+  payment       Payment?
+
+  @@index([passengerId])
+  @@index([poolId])
+  @@index([status])
+}
+
+// Append-only audit trail: every status transition for a RideRequest is
+// recorded here, satisfying "hold onto enough history to explain exactly
+// what happened" (Section 2) without mutating/losing prior states.
+model StatusHistory {
+  id            String     @id @default(uuid())
+  rideRequestId String
+  rideRequest   RideRequest @relation(fields: [rideRequestId], references: [id])
+  fromStatus    RideStatus?
+  toStatus      RideStatus
+  changedById   String?
+  changedBy     User?      @relation("ChangedByUser", fields: [changedById], references: [id])
+  note          String?
+  createdAt     DateTime   @default(now())
+
+  @@index([rideRequestId])
+}
+
+// One payment record per RideRequest (each passenger pays their own fare -
+// Section 2/3: "Each passenger gets an individual fare").
+model Payment {
+  id            String        @id @default(uuid())
+  rideRequestId String        @unique
+  rideRequest   RideRequest   @relation(fields: [rideRequestId], references: [id])
+  method        PaymentMethod
+  amountPoisha  Int
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+}
