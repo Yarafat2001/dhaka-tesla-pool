@@ -247,3 +247,9 @@ trade-off), and a product tour._
 Public deployment link to be added once a confirmed free-tier backend host
 is set up; the Docker Compose setup above is a fully reproducible
 alternative deployment per Section 6.
+
+## Version
+
+`v1.0.0` — MVP scope per the assignment brief (Sections 1-19). See git
+history: `master` holds integrated feature work, `pre-release` carries
+integration/doc fixes, `release/v1.0.0` is the tagged submission point.
