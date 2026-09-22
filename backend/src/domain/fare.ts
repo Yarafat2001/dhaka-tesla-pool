@@ -57,6 +57,21 @@ export function calculateFare(input: FareInput): FareBreakdown {
   };
 }
 
+/**
+ * Whether a passenger should be charged the pooled (discounted) price.
+ *
+ * This is deliberately a function of *current pool membership* rather than a
+ * boolean frozen when the request was created. The passenger who opens a pool
+ * is alone at that instant, but the discount must still apply once somebody
+ * shares the ride - otherwise the opener silently pays the solo fare while the
+ * joiner gets 20% off, and the worked example in docs/fare-model.md (Nusrat at
+ * 6840 poisha) would not match the running system. rideService/driverService
+ * re-derive fares through this function whenever pool membership changes.
+ */
+export function isPooledPricing(activeRideCount: number): boolean {
+  return activeRideCount >= 2;
+}
+
 export function poishaToDisplay(poisha: number): string {
   const taka = poisha / 100;
   return `৳${taka.toFixed(2)}`;

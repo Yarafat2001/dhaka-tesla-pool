@@ -73,20 +73,42 @@ async function main() {
   });
 
   console.log('Seeding Nusrat, Rafiq, Shirin...');
+  // Simulated TeslaPay wallets (Section 5): BDT 500.00 each, so the TeslaPay
+  // payment path is actually demoable - a wallet at 0 makes the feature
+  // untestable by hand. Re-seeding resets them, which is what a demo wants.
+  const WALLET_POISHA = 50000;
   const nusrat = await prisma.user.upsert({
     where: { phone: '01710000002' },
-    update: {},
-    create: { name: 'Nusrat', phone: '01710000002', passwordHash, role: 'PASSENGER' },
+    update: { walletBalancePoisha: WALLET_POISHA },
+    create: {
+      name: 'Nusrat',
+      phone: '01710000002',
+      passwordHash,
+      role: 'PASSENGER',
+      walletBalancePoisha: WALLET_POISHA,
+    },
   });
   const rafiq = await prisma.user.upsert({
     where: { phone: '01710000003' },
-    update: {},
-    create: { name: 'Rafiq', phone: '01710000003', passwordHash, role: 'PASSENGER' },
+    update: { walletBalancePoisha: WALLET_POISHA },
+    create: {
+      name: 'Rafiq',
+      phone: '01710000003',
+      passwordHash,
+      role: 'PASSENGER',
+      walletBalancePoisha: WALLET_POISHA,
+    },
   });
   const shirin = await prisma.user.upsert({
     where: { phone: '01710000004' },
-    update: {},
-    create: { name: 'Shirin', phone: '01710000004', passwordHash, role: 'PASSENGER' },
+    update: { walletBalancePoisha: WALLET_POISHA },
+    create: {
+      name: 'Shirin',
+      phone: '01710000004',
+      passwordHash,
+      role: 'PASSENGER',
+      walletBalancePoisha: WALLET_POISHA,
+    },
   });
 
   console.log('Seed complete. Demo credentials (all passwords: password123):');

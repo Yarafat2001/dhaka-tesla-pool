@@ -10,6 +10,9 @@ const requestSchema = z.object({
   pickupZoneId: z.string().min(1),
   dropoffZoneId: z.string().min(1),
   seats: z.number().int().positive().default(1),
+  // Section 5: cash or the simulated TeslaPay wallet. Defaults to cash so
+  // existing clients (and the passenger UI before you pick) keep working.
+  paymentMethod: z.enum(['CASH', 'TESLAPAY']).default('CASH'),
 });
 
 rideRouter.post('/', async (req, res, next) => {

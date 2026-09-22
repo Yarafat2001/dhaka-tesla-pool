@@ -1,6 +1,8 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { assertTransition, RideStatus } from '../domain/stateMachine';
+import { settlePayment } from '../domain/payment';
+import { repricePoolFares } from './rideService';
 
 export async function setOnlineStatus(driverId: string, isOnline: boolean) {
   const tesla = await prisma.tesla.findUnique({ where: { driverId } });
@@ -68,17 +70,55 @@ export const startTrip = (poolId: string, driverId: string) =>
 export async function completeTrip(poolId: string, driverId: string) {
   const updatedPool = await transitionPoolRides(poolId, driverId, 'COMPLETED');
 
-  // Freeze final fares and create payment records once the trip is done.
-  const rides = await prisma.rideRequest.findMany({ where: { poolId } });
-  await prisma.$transaction(
-    rides
-      .filter((r) => r.status === 'COMPLETED')
-      .map((r) =>
-        prisma.rideRequest.update({
-          where: { id: r.id },
-          data: { finalFarePoisha: r.estimatedFarePoisha },
-        })
-      )
-  );
+  // The pool's membership is final now (nobody can join a completed trip), so
+  // re-derive every rider's fare one last time - this is what gives the
+  // passenger who opened the pool the shared-ride discount - then freeze it as
+  // the authoritative amount that will be charged.
+  await prisma.$transaction(async (tx) => {
+    await repricePoolFares(tx, poolId);
+
+    const rides = await tx.rideRequest.findMany({
+      where: { poolId, status: 'COMPLETED' },
+      include: { passenger: true },
+    });
+
+    for (const ride of rides) {
+      const fare = ride.estimatedFarePoisha;
+
+      // 1. Freeze the amount this passenger is charged.
+      await tx.rideRequest.update({
+        where: { id: ride.id },
+        data: { finalFarePoisha: fare },
+      });
+
+      // 2. Settle it - cash is handed over in the Tesla; TeslaPay debits the
+      //    simulated wallet. Upsert (not create) so a retried completion can
+      //    never leave two payment rows for one ride.
+      const settlement = settlePayment({
+        method: ride.paymentMethod,
+        amountPoisha: fare,
+        walletBalancePoisha: ride.passenger.walletBalancePoisha,
+      });
+
+      await tx.payment.upsert({
+        where: { rideRequestId: ride.id },
+        create: {
+          rideRequestId: ride.id,
+          method: ride.paymentMethod,
+          amountPoisha: fare,
+          status: settlement.status,
+        },
+        update: { amountPoisha: fare, status: settlement.status },
+      });
+
+      if (ride.paymentMethod === 'TESLAPAY' && settlement.status === 'PAID') {
+        await tx.user.update({
+          where: { id: ride.passengerId },
+          data: { walletBalancePoisha: settlement.newWalletBalancePoisha },
+        });
+      }
+    }
+  });
+
   return updatedPool;
 }
