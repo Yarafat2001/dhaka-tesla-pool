@@ -233,13 +233,30 @@ API/DB integration tests (need a running Postgres, and refuse to run unless
 `DATABASE_URL` points at an isolated schema so demo data is never touched):
 
 ```bash
-# with the compose stack running
+# with the compose stack running; the tests execute inside the api image, so
+# make sure that image was built from the current source
+docker compose build api
+
 docker run --rm --network dhaka-tesla-pool_default \
   -e DATABASE_URL="postgresql://tesla_pool:tesla_pool_dev@db:5432/dhaka_tesla_pool?schema=test" \
   -e JWT_SECRET=integration-test-secret \
   dhaka-tesla-pool-api:latest \
   sh -c "npx prisma migrate deploy && npm run test:integration"
 ```
+
+Because compose publishes Postgres on `:5432`, the same suite can be run straight
+from the host instead, which is quicker while iterating:
+
+```bash
+cd backend
+DATABASE_URL="postgresql://tesla_pool:tesla_pool_dev@localhost:5432/dhaka_tesla_pool?schema=test" \
+JWT_SECRET=integration-test-secret npm run test:integration
+```
+
+`test:integration` uses `jest.integration.config.js`, which only picks up
+`**/__tests__/**/*.integration.test.ts` and fails if
+`DATABASE_URL` is not pointed at a `test` schema - the guard exists so a careless
+`npm test` can never truncate the demo data the README refers to.
 
 22 tests, all passing - including the two the brief calls out explicitly: a
 passenger cannot read or cancel another passenger's ride (`403`, state
