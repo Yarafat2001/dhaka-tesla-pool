@@ -121,14 +121,15 @@ afterAll(async () => {
     where: { phone: { startsWith: TEST_PREFIX } },
     select: { id: true },
   });
-  const userIds = users.map((u) => u.id);
+  const userIds = users.map((u: (typeof users)[number]) => u.id);
 
   const rides = await prisma.rideRequest.findMany({
     where: { passengerId: { in: userIds } },
     select: { id: true, poolId: true },
   });
-  const rideIds = rides.map((r) => r.id);
-  const poolIds = [...new Set(rides.map((r) => r.poolId).filter((p): p is string => p !== null))];
+  const rideIds = rides.map((r: (typeof rides)[number]) => r.id);
+  const ridePoolIds = rides.map((r: (typeof rides)[number]) => r.poolId);
+  const poolIds = [...new Set(ridePoolIds.filter((p: string | null): p is string => p !== null))];
 
   await prisma.payment.deleteMany({ where: { rideRequestId: { in: rideIds } } });
   await prisma.statusHistory.deleteMany({ where: { rideRequestId: { in: rideIds } } });

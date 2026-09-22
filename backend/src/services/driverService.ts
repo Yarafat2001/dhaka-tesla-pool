@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../middleware/errorHandler';
 import { assertTransition, RideStatus } from '../domain/stateMachine';
@@ -41,7 +42,7 @@ async function transitionPoolRides(
   driverId: string,
   toStatus: Exclude<RideStatus, 'REQUESTED' | 'CANCELLED'>
 ) {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const pool = await tx.pool.findUnique({
       where: { id: poolId },
       include: { tesla: true, rideRequests: true },
@@ -104,7 +105,7 @@ async function transitionPoolRides(
  * StatusHistory and is unchanged by acceptance (each rider stays MATCHED).
  */
 export async function acceptPool(poolId: string, driverId: string) {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const pool = await tx.pool.findUnique({ where: { id: poolId }, include: { tesla: true } });
     if (!pool) throw new AppError('Pool not found', 404);
     if (pool.tesla.driverId !== driverId) {
@@ -131,7 +132,7 @@ export async function completeTrip(poolId: string, driverId: string) {
   // re-derive every rider's fare one last time - this is what gives the
   // passenger who opened the pool the shared-ride discount - then freeze it as
   // the authoritative amount that will be charged.
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await repricePoolFares(tx, poolId);
 
     const rides = await tx.rideRequest.findMany({
@@ -202,16 +203,16 @@ export async function getDriverHistory(driverId: string) {
 
   return {
     tesla: { id: tesla.id, name: tesla.name, capacity: tesla.capacity },
-    pools: pools.map((pool) => ({
+    pools: pools.map((pool: (typeof pools)[number]) => ({
       id: pool.id,
       status: pool.status,
       seatsUsed: pool.seatsUsed,
       startedAt: pool.createdAt,
       finishedAt: pool.updatedAt,
       totalEarnedPoisha: pool.rideRequests
-        .filter((ride) => ride.status === 'COMPLETED')
-        .reduce((sum, ride) => sum + (ride.finalFarePoisha ?? 0), 0),
-      passengers: pool.rideRequests.map((ride) => ({
+        .filter((ride: (typeof pool.rideRequests)[number]) => ride.status === 'COMPLETED')
+        .reduce((sum: number, ride: (typeof pool.rideRequests)[number]) => sum + (ride.finalFarePoisha ?? 0), 0),
+      passengers: pool.rideRequests.map((ride: (typeof pool.rideRequests)[number]) => ({
         name: ride.passenger.name,
         seats: ride.seats,
         status: ride.status,
