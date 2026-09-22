@@ -26,7 +26,8 @@ enum RideStatus {
 }
 
 enum PoolStatus {
-  FORMING // accepting more compatible requests, Tesla not yet dispatched
+  FORMING // accepting more compatible requests, driver hasn't committed yet
+  ACCEPTED // driver has accepted this pool; no further riders can join
   ACTIVE // Tesla en route / trip in progress
   COMPLETED
   CANCELLED
