@@ -1,4 +1,4 @@
-import { calculateFare, BASE_FARE_POISHA, PER_KM_POISHA } from '../domain/fare';
+import { calculateFare, isPooledPricing, BASE_FARE_POISHA, PER_KM_POISHA } from '../domain/fare';
 
 describe('calculateFare', () => {
   it('charges base + distance with no discount for a solo ride', () => {
@@ -48,5 +48,33 @@ describe('calculateFare', () => {
     expect(Number.isInteger(result.totalFarePoisha)).toBe(true);
     expect(Number.isInteger(result.distanceChargePoisha)).toBe(true);
     expect(Number.isInteger(result.poolDiscountPoisha)).toBe(true);
+  });
+
+  it('isPooledPricing requires a genuinely shared Tesla', () => {
+    expect(isPooledPricing(0)).toBe(false);
+    expect(isPooledPricing(1)).toBe(false); // opener riding alone so far
+    expect(isPooledPricing(2)).toBe(true); // Nusrat + Rafiq
+    expect(isPooledPricing(3)).toBe(true); // Bullet full: Nusrat + Rafiq + Shirin
+  });
+
+  it("re-prices Nusrat to the pooled fare once Rafiq shares her pool", () => {
+    // Nusrat opens the pool alone, so the first estimate is the solo fare.
+    const alone = calculateFare({ distanceKm: 3.2, isPooled: isPooledPricing(1) });
+    expect(alone.poolDiscountPoisha).toBe(0);
+    expect(alone.totalFarePoisha).toBe(7800); // 3000 + 4800
+
+    // Rafiq joins the same pool. Nobody's distance changed, but the ride is
+    // now genuinely shared, so Nusrat's fare is re-derived with the discount -
+    // this is the 6840 figure asserted in docs/fare-model.md.
+    const shared = calculateFare({ distanceKm: 3.2, isPooled: isPooledPricing(2) });
+    expect(shared.totalFarePoisha).toBe(6840); // 3000 + 4800 - 960
+  });
+
+  it('falls back to solo pricing when the pool shrinks to one rider', () => {
+    // Shirin cancels, leaving Nusrat + Rafiq: still pooled, still 6840/6000.
+    expect(calculateFare({ distanceKm: 3.2, isPooled: isPooledPricing(2) }).totalFarePoisha).toBe(6840);
+    // Rafiq then cancels too, leaving Nusrat alone: the discount no longer
+    // applies, because there is no second rider to share the Tesla with.
+    expect(calculateFare({ distanceKm: 3.2, isPooled: isPooledPricing(1) }).totalFarePoisha).toBe(7800);
   });
 });
