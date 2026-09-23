@@ -32,7 +32,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppNav />
           {children}
           <footer className="app-footer">
-            <span>Dhaka Tesla Pool · Share a seat · Split the fare · Survive Dhaka traffic</span>
+            <strong>Dhaka Tesla Pool</strong>
+            <span>Share a seat · Split the fare · Survive Dhaka traffic</span>
+            <div className="foot-links">
+              <a href="/login">Sign in</a>
+              <a href="/signup">Create account</a>
+            </div>
           </footer>
         </div>
       </body>

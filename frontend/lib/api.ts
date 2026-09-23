@@ -11,6 +11,7 @@ export function setToken(token: string) {
 
 export function clearToken() {
   window.localStorage.removeItem('token');
+  window.localStorage.removeItem('user');
 }
 
 export function getStoredUser(): { id: string; name: string; role: string } | null {
