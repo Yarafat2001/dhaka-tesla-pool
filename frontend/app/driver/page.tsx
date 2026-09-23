@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, clearToken, getStoredUser } from '@/lib/api';
 import { useToasts } from '@/lib/toasts';
+import BrandLogo from '@/components/BrandLogo';
 
 interface RideRequest {
   id: string;
@@ -131,7 +132,7 @@ export default function DriverPage() {
       {toastsView}
       <div className="top-nav">
         <div className="row" style={{ justifyContent: 'flex-start', gap: 12 }}>
-          <span className="avatar">🛺</span>
+          <BrandLogo height={38} />
           <div>
             <h1>Hi, {user?.name}</h1>
             <p className="subtitle" style={{ marginBottom: 0 }}>

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, clearToken, getStoredUser } from '@/lib/api';
 import { useToasts } from '@/lib/toasts';
+import BrandLogo from '@/components/BrandLogo';
 
 interface Zone { id: string; name: string; }
 interface Ride {
@@ -172,7 +173,7 @@ export default function PassengerPage() {
       {toastsView}
       <div className="top-nav">
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <span className="avatar">{user?.name?.charAt(0) ?? '👤'}</span>
+          <BrandLogo height={38} />
           <div>
             <h1>Hi, {user?.name}</h1>
             <p className="subtitle" style={{ marginBottom: 0 }}>Where to today?</p>
