@@ -39,16 +39,14 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="page">
-      <div className="brand">
-        <BrandLogo height={46} />
-        <div>
-          <h1>Create an account</h1>
-          <p>Pick your side of the Tesla.</p>
-        </div>
+    <main className="page page-narrow">
+      <div className="auth-head">
+        <BrandLogo height={52} />
+        <h1>Create an account</h1>
+        <p className="subtitle">Pick your side of the Tesla.</p>
       </div>
 
-      <form className="card" onSubmit={handleSubmit}>
+      <form className="card auth-card" onSubmit={handleSubmit}>
         <label>I am a</label>
         <div className="role-cards">
           <button

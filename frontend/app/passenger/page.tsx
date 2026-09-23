@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, clearToken, getStoredUser } from '@/lib/api';
+import { api, getStoredUser } from '@/lib/api';
 import { useToasts } from '@/lib/toasts';
-import BrandLogo from '@/components/BrandLogo';
 
 interface Zone { id: string; name: string; }
 interface Ride {
@@ -82,6 +81,10 @@ export default function PassengerPage() {
   useEffect(() => {
     if (!user) {
       router.replace('/login');
+      return;
+    }
+    if (user.role === 'DRIVER') {
+      router.replace('/driver');
       return;
     }
     refresh().catch((e) => setError(e instanceof Error ? e.message : 'Failed to load'));
@@ -171,21 +174,11 @@ export default function PassengerPage() {
   return (
     <main className="page">
       {toastsView}
-      <div className="top-nav">
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <BrandLogo height={38} />
-          <div>
-            <h1>Hi, {user?.name}</h1>
-            <p className="subtitle" style={{ marginBottom: 0 }}>Where to today?</p>
-          </div>
+      <div className="page-head">
+        <div>
+          <h1>Hi, {user?.name}</h1>
+          <p className="subtitle">Where to today?</p>
         </div>
-        <button
-          className="secondary"
-          style={{ width: 'auto', marginTop: 0 }}
-          onClick={() => { clearToken(); router.push('/login'); }}
-        >
-          Sign out
-        </button>
       </div>
 
       <form className="card" onSubmit={handleRequest}>

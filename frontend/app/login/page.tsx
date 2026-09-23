@@ -39,16 +39,14 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="page">
-      <div className="brand">
-        <BrandLogo height={46} />
-        <div>
-          <h1>Dhaka Tesla Pool</h1>
-          <p>Share a seat. Split the fare. Survive Dhaka traffic.</p>
-        </div>
+    <main className="page page-narrow">
+      <div className="auth-head">
+        <BrandLogo height={52} />
+        <h1>Welcome back</h1>
+        <p className="subtitle">Sign in to share a Tesla and split the fare.</p>
       </div>
 
-      <form className="card" onSubmit={handleSubmit}>
+      <form className="card auth-card" onSubmit={handleSubmit}>
         <label>Quick fill the demo cast</label>
         <div className="chips">
           {DEMO.map((d) => (
