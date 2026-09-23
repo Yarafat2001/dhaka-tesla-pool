@@ -89,7 +89,7 @@ sequenceDiagram
     API->>DB: Tesla + pools in (FORMING | ACCEPTED | ACTIVE)
     API-->>J: pool with 3 riders, seatsUsed 3/3
     J->>API: POST /api/driver/pools/:id/accept
-    API->>DB: pool.status = ACCEPTED (pool locks; latecomers open a new pool)
+    API->>DB: pool.status = ACCEPTED (pool locks - latecomers open a new pool)
     J->>API: POST /api/driver/pools/:id/arrive
     API->>DB: rides -> DRIVER_ARRIVED + StatusHistory rows (one transaction)
     J->>API: POST /api/driver/pools/:id/start

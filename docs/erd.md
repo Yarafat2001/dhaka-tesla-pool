@@ -76,7 +76,7 @@ erDiagram
 
     Payment {
         string id PK
-        string rideRequestId FK UK "1:1 with RideRequest"
+        string rideRequestId UK "FK - 1:1 with RideRequest"
         enum method "CASH|TESLAPAY"
         int amountPoisha
         enum status "PENDING|PAID|FAILED"
