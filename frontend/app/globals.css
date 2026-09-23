@@ -309,6 +309,12 @@ button.loading::after {
 
 /* ---- Brand block (login / signup) ---- */
 .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.brand-logo {
+  border-radius: 14px; flex: none;
+  box-shadow: 0 12px 30px -14px rgba(62, 207, 142, 0.9);
+  animation: rise 0.4s ease both;
+  object-fit: contain; background: #0d0f13;
+}
 .brand .logo {
   width: 46px; height: 46px; border-radius: 15px;
   background: var(--grad-accent); color: #05130c;

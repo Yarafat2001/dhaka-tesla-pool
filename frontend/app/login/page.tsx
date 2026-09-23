@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, setToken, setStoredUser } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 // The seeded cast from the story - tapping a chip fills the form so the demo
 // (and the evaluator) never has to type a phone number by hand.
@@ -40,7 +41,7 @@ export default function LoginPage() {
   return (
     <main className="page">
       <div className="brand">
-        <div className="logo">⚡</div>
+        <BrandLogo height={46} />
         <div>
           <h1>Dhaka Tesla Pool</h1>
           <p>Share a seat. Split the fare. Survive Dhaka traffic.</p>

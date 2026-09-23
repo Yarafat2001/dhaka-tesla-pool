@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, setToken, setStoredUser } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function SignupPage() {
   return (
     <main className="page">
       <div className="brand">
-        <div className="logo">⚡</div>
+        <BrandLogo height={46} />
         <div>
           <h1>Create an account</h1>
           <p>Pick your side of the Tesla.</p>
