@@ -107,6 +107,8 @@ button.danger{background:linear-gradient(135deg,#fb7185,#f43f5e);color:#fff}
 .btn-primary:hover{transform:translateY(-2px)}
 .btn-primary.sm,.btn-ghost.sm{margin-top:0;width:auto;padding:9px 18px;font-size:.82rem;border-radius:999px}
 .btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;border:1px solid var(--bstrong);color:var(--text);background:rgba(255,255,255,.04)}
+:root:not([data-theme='dark']) .btn-ghost{background:linear-gradient(var(--surface),var(--surface)) padding-box,linear-gradient(135deg,rgba(10,122,67,.85),rgba(2,132,199,.75)) border-box;border:1.5px solid transparent;color:var(--brand);box-shadow:0 8px 20px -12px rgba(10,122,67,.45);transition:.18s}
+:root:not([data-theme='dark']) .btn-ghost:hover{background:var(--grad) padding-box,linear-gradient(135deg,#0a7a43,#0284c7) border-box;color:#06130c;transform:translateY(-2px);box-shadow:0 14px 30px -14px rgba(10,122,67,.7)}
 .hero-stats{display:flex;gap:26px;margin-top:30px;flex-wrap:wrap}
 .hstat b{font-family:'Sora';font-size:1.35rem;display:block}
 .hstat span{color:var(--muted);font-size:.76rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
