@@ -9,16 +9,16 @@ import BrandLogo from '@/components/BrandLogo';
 // fills the form so the demo (and the evaluator) never has to type a phone
 // number by hand.
 const DEMO = [
-  { name: 'Jashim', phone: '01710000001', sub: 'Driver · 01710000001' },
-  { name: 'Nusrat', phone: '01710000002', sub: 'Passenger · 01710000002' },
-  { name: 'Rafiq', phone: '01710000003', sub: 'Passenger · 01710000003' },
-  { name: 'Shirin', phone: '01710000004', sub: 'Passenger · 01710000004' },
+  { name: 'Jashim', phone: '01710000001', sub: 'Driver · 01710000001', icon: '🚗' },
+  { name: 'Nusrat', phone: '01710000002', sub: 'Passenger · 01710000002', icon: '👤' },
+  { name: 'Rafiq', phone: '01710000003', sub: 'Passenger · 01710000003', icon: '👤' },
+  { name: 'Shirin', phone: '01710000004', sub: 'Passenger · 01710000004', icon: '👤' },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState('01710000002');
-  const [password, setPassword] = useState('password123');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,7 +63,7 @@ export default function LoginPage() {
           <option value="">Choose a demo account…</option>
           {DEMO.map((d) => (
             <option key={d.phone} value={d.phone}>
-              {d.name} — {d.sub}
+              {d.icon} {d.name} — {d.sub}
             </option>
           ))}
         </select>
@@ -75,7 +75,9 @@ export default function LoginPage() {
           id="phone"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
+          placeholder="01XXXXXXXXX"
           autoComplete="tel"
+          required
         />
 
         <label htmlFor="password">Password</label>
@@ -85,7 +87,9 @@ export default function LoginPage() {
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
             autoComplete="current-password"
+            required
           />
           <button
             type="button"
