@@ -43,21 +43,48 @@ and driver lifecycle sequence diagrams) and [`docs/erd.md`](docs/erd.md)
 
 ## Screenshots
 
-The four screens below are the whole product surface. Run
-`docker compose up --build`, then sign in with the demo credentials further down
-to reproduce them.
+The four screens below are the whole product surface, captured from the running
+stack in light theme (the app's default - the nav toggle switches to dark). Run
+`docker compose up --build` and sign in with the demo credentials further down to
+reproduce them. The same four screens in dark mode are in
+[`docs/screenshots/dark/`](docs/screenshots/dark/).
 
-| Screen | What to look for |
-|---|---|
-| ![Login](docs/screenshots/01-login.png) | Seeded demo cast listed on the login screen |
-| ![Passenger](docs/screenshots/02-passenger.png) | Live fare estimate (solo vs. shared), payment method, wallet balance, ride list with statuses |
-| ![Audit trail](docs/screenshots/03-ride-audit-trail.png) | "What happened on this ride?" - every status change for one ride |
-| ![Driver](docs/screenshots/04-driver.png) | Bullet's 3 seats, a pool waiting for acceptance (`Accept pool`), and trip history with per-passenger payments and earnings |
+**1. Login - the seeded demo cast**
+
+![Login screen with the "quick fill the demo cast" select listing Jashim, Nusrat, Rafiq and Shirin](docs/screenshots/01-login.png)
+
+Pick a name from **Quick fill the demo cast** and the form fills itself (every
+demo account uses `password123`), so nobody has to type a phone number by hand.
+
+**2. Passenger - request form, live fare estimate, wallet, ride list**
+
+![Nusrat's passenger screen: pickup and dropoff zones, seat and payment choice, live solo-vs-shared estimate, TeslaPay wallet and her ride list](docs/screenshots/02-passenger.png)
+
+The fare estimate is live *before* booking (solo vs. sharing the Tesla), the
+TeslaPay wallet is debited when a TeslaPay trip completes, and each ride in the
+list carries its lifecycle stepper and status.
+
+**3. Audit trail - "what happened on this ride?"**
+
+![Nusrat's completed ride expanded: REQUESTED, MATCHED, DRIVER_ARRIVED, STARTED, COMPLETED plus the settled TeslaPay payment](docs/screenshots/03-ride-audit-trail.png)
+
+Every status change for one ride, read straight from `StatusHistory`, plus the
+settled payment - the passenger-facing answer to "hold onto enough history to
+explain exactly what happened".
+
+**4. Driver - Bullet, a pool waiting for acceptance, and earnings**
+
+![Jashim's driver screen: the Online toggle, a FORMING pool with an Accept pool button, and trip history with per-passenger payments summing to ৳255.60 earned](docs/screenshots/04-driver.png)
+
+Bullet's 3 seats, a pool waiting for `Accept pool`, and trip history with
+per-passenger method/status and earnings.
 
 > These are real captures from the running stack, not mockups, and they are
-> committed - the README renders them without any manual step. To regenerate
-> them (or capture your own GIF), `docs/screenshots/README.md` has the exact
-> steps.
+> committed - the README renders them without any manual step. They are also
+> reproducible: `docs/screenshots/seed-demo.js` runs the two-minute demo through
+> the API and `docs/screenshots/capture.js` captures the screens (in either
+> theme), so the images can be regenerated against the current code instead of
+> drifting from it.
 
 ## Assumptions
 
