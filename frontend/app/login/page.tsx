@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { api, setToken, setStoredUser } from '@/lib/api';
 import BrandLogo from '@/components/BrandLogo';
 
-// The seeded cast from the story - tapping a chip fills the form so the demo
-// (and the evaluator) never has to type a phone number by hand.
+// The seeded cast from the story - picking one from the quick-fill select
+// fills the form so the demo (and the evaluator) never has to type a phone
+// number by hand.
 const DEMO = [
-  { name: 'Jashim', phone: '01710000001', sub: 'Driver · 01710000001', initial: '🚗' },
-  { name: 'Nusrat', phone: '01710000002', sub: 'Passenger · 01710000002', initial: 'N' },
-  { name: 'Rafiq', phone: '01710000003', sub: 'Passenger · 01710000003', initial: 'R' },
-  { name: 'Shirin', phone: '01710000004', sub: 'Passenger · 01710000004', initial: 'S' },
+  { name: 'Jashim', phone: '01710000001', sub: 'Driver · 01710000001' },
+  { name: 'Nusrat', phone: '01710000002', sub: 'Passenger · 01710000002' },
+  { name: 'Rafiq', phone: '01710000003', sub: 'Passenger · 01710000003' },
+  { name: 'Shirin', phone: '01710000004', sub: 'Passenger · 01710000004' },
 ];
 
 export default function LoginPage() {
@@ -47,25 +48,25 @@ export default function LoginPage() {
       </div>
 
       <form className="card auth-card" onSubmit={handleSubmit}>
-        <label>Quick fill the demo cast</label>
-        <div className="chips">
+        <label htmlFor="quick-fill">Quick fill the demo cast</label>
+        <select
+          id="quick-fill"
+          value={DEMO.some((d) => d.phone === phone) ? phone : ''}
+          onChange={(e) => {
+            const picked = DEMO.find((d) => d.phone === e.target.value);
+            if (!picked) return;
+            setPhone(picked.phone);
+            setPassword('password123');
+            setError(null);
+          }}
+        >
+          <option value="">Choose a demo account…</option>
           {DEMO.map((d) => (
-            <button
-              key={d.phone}
-              type="button"
-              className={`chip ${phone === d.phone ? 'active' : ''}`}
-              onClick={() => {
-                setPhone(d.phone);
-                setPassword('password123');
-                setError(null);
-              }}
-            >
-              <span className="avatar sm">{d.initial}</span>
-              {d.name}
-              <span className="chip-sub">{d.sub}</span>
-            </button>
+            <option key={d.phone} value={d.phone}>
+              {d.name} — {d.sub}
+            </option>
           ))}
-        </div>
+        </select>
 
         <hr className="divider" />
 
