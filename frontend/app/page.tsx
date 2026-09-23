@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getStoredUser } from '@/lib/api';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function Home() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function Home() {
   return (
     <main className="page">
       <div className="splash">
-        <div className="avatar logo">⚡</div>
+        <BrandLogo height={72} />
         <h1>Dhaka Tesla Pool</h1>
         <p className="subtitle" style={{ marginBottom: 0 }}>
           Share a seat. Split the fare. Survive Dhaka traffic.
