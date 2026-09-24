@@ -457,9 +457,9 @@ standing it up is one link plus a GitHub login:
 
 > **Deploy:** <https://render.com/deploy?repo=https://github.com/Yarafat2001/dhaka-tesla-pool>
 
-- **Web app:** `https://<your-web-service>.onrender.com` — _fill in after the
-  blueprint finishes its first deploy._
-- **API:** `https://<your-api-service>.onrender.com/health` → `{"status":"ok"}`
+- **Web app (live):** <https://dhaka-tesla-pool.duckdns.org> - free custom domain on the Render web service (`render.yaml` -> `dhaka-tesla-pool-web` -> `domains:`), TLS issued by Render. Live once the DuckDNS name is claimed and pointed at the service (see `docs/deployment.md` Option A1); until then the `.onrender.com` URL below is the working fallback.
+- **Web app (fallback):** `https://<your-web-service>.onrender.com` - _fill in after the blueprint finishes its first deploy._
+- **API:** `https://<your-api-service>.onrender.com/health` - `{"status":"ok"}`
 
 The blueprint link rather than a URL is what is committed here, and the reason is
 honest rather than a dodge: creating the account and clicking **Apply** is the one
