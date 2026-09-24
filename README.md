@@ -41,6 +41,33 @@ See [`docs/architecture.md`](docs/architecture.md) (component diagram, passenger
 and driver lifecycle sequence diagrams) and [`docs/erd.md`](docs/erd.md)
 (entity-relationship diagram + modeling rationale).
 
+## Live Project Link
+
+- **App:** <https://attend-reporters-toys-plants.trycloudflare.com/login> (verified working — `/health` ok, `/login` 200, 8 zones live)
+- **Health:** <https://attend-reporters-toys-plants.trycloudflare.com/health> should show `{"status":"ok"}`
+- **Login in 10 seconds:** open the app → **Quick fill the demo cast** → pick **Nusrat** → tap **Sign in**. Every demo account uses password `password123` (it auto-fills).
+
+## User manual (2 minutes, friendly version)
+
+**1. I want a ride (as Nusrat, passenger)**
+1. Sign in as Nusrat (quick-fill → Sign in).
+2. Pick **Pickup** (e.g. Banani) and **Dropoff** (e.g. Mohakhali). You instantly see **Solo** vs **Shared** price.
+3. Choose seats + `CASH` or `TESLAPAY`, tap **Request ride**.
+4. Watch your ride card move: `REQUESTED → MATCHED → DRIVER_ARRIVED → STARTED → COMPLETED`.
+5. Tap **What happened on this ride?** anytime to see the full history.
+
+**2. I drive a Tesla (as Jashim, driver)**
+1. Sign in as Jashim (quick-fill → Sign in).
+2. Tap **Go online** so pools come to you.
+3. When a pool appears, tap **Accept pool** → drive → **Arrived** → **Start trip** → **Complete**. Fares settle automatically.
+
+**3. Try pooling (the fun part)**
+1. Nusrat requests Banani → Mohakhali (opens a pool, solo ৳78.00).
+2. In another tab/incognito, sign in as Rafiq, request the same pickup. Both fares drop to the shared price (৳68.40 each).
+3. Jashim accepts and completes — check **Trip history** for earnings.
+
+**Tips if stuck:** wrong role? The app auto-redirects (passenger ↔ driver). Seeing login again? Your token expired — just sign in again. First load slow? Free hosting cold-starts; wait 30s and reload. Nothing works? Check `/health` first.
+
 ## Screenshots
 
 The four screens below are the whole product surface, captured from the running
