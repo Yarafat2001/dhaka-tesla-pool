@@ -63,9 +63,14 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
     autoDeploy: true
-    # Custom domain: www.dhaka-tesla-pool.com (plus apex, which redirects
-    # to www in the app). Render provisions and renews TLS automatically
-    # once the DNS records below exist. See docs/deployment.md §6.
+    # Custom domain(s). Render ALWAYS gives you a free permanent URL:
+    #   https://<service-name>.onrender.com  (no expiry for web services)
+    # The entries below are verified only once DNS points at Render; until
+    # then they sit as "pending" and do NOT block the free onrender.com URL.
+    # Paid target: www.dhaka-tesla-pool.com (plus apex, which redirects
+    # to www in the app). Free alternative: any DuckDNS/is-a.dev name you
+    # own - add it here alongside, e.g. dhaka-tesla-pool.duckdns.org.
+    # See docs/deployment.md Options A1 (free) / A2 (paid).
     domains:
       - www.dhaka-tesla-pool.com
       - dhaka-tesla-pool.com

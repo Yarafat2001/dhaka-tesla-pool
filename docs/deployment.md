@@ -80,6 +80,37 @@ push.
 4. Copy the web service's URL (`https://<name>.onrender.com`) into the README's
    deployment section. That is the public "Live Project Link".
 
+### Option A1 - Free name for weeks/months (DuckDNS, no money, 10 minutes)
+
+Render's own `https://<service>.onrender.com` URL is already free and
+permanent, but if you want a *custom-looking* name without buying anything,
+claim a free subdomain and point it at Render. Fastest path: **DuckDNS**
+(`*.duckdns.org`) - no PR queue, no waiting days:
+
+1. Go to <https://www.duckdns.org>, sign in (GitHub/Google), and create a
+   name like `dhaka-tesla-pool` (gives `dhaka-tesla-pool.duckdns.org`).
+   It stays yours as long as you click "renew" occasionally - fine for a
+   month-long demo and beyond.
+2. In DuckDNS, point the name at Render: add the `.onrender.com` hostname
+   of your web service (from the dashboard after Option A) as the target.
+3. In the Render dashboard, open `dhaka-tesla-pool-web` -> **Settings** ->
+   **Custom Domains** -> add `dhaka-tesla-pool.duckdns.org`. Also add the
+   same line to `render.yaml`'s `domains:` list so the blueprint keeps it.
+   Render verifies DNS, then issues and auto-renews TLS - the name serves
+   the app over HTTPS.
+4. Use `https://dhaka-tesla-pool.duckdns.org/login` as the Live Project
+   Link for the submission.
+
+Alternative: **is-a.dev** (`dhaka-tesla-pool.is-a.dev`) works the same way
+but registration is a GitHub PR on their repo plus a waiting queue - days,
+not minutes. Prefer DuckDNS when you need the name this week.
+
+Reality check on "free for 1 week/month": DuckDNS and is-a.dev names are
+free indefinitely (not trials), and Render's TLS on them is free too. The
+only expiry in this stack is Render's free **Postgres (30 days)** - for a
+demo longer than that, move the DB to Neon free tier and keep the web/API
+on Render (see Option B).
+
 ### Option A2 - Custom domain `www.dhaka-tesla-pool.com` (needs the domain)
 
 The blueprint already declares both hostnames on the web service
