@@ -9,9 +9,27 @@
 //     would then call itself and every API request would 404 against Next.js.
 // A trailing slash is trimmed so `${API_BASE}${path}` never yields "//api".
 function resolveApiBase(raw: string | undefined): string {
-  const value = (raw ?? '').trim().replace(/\/+$/, '');
-  if (!value) return 'http://localhost:4000';
-  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  let value = (raw ?? '').trim().replace(/\/+$/, '');
+  if (!value) {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host.includes('.onrender.com')) {
+        return '/api-proxy';
+      }
+    }
+    return 'http://localhost:4000';
+  }
+  // If Render passed bare service name like "dhaka-tesla-pool-api-fed0" without domain
+  if (!/^https?:\/\//i.test(value)) {
+    if (!value.includes('.')) {
+      value = `${value}.onrender.com`;
+    }
+    value = `https://${value}`;
+  } else if (!value.includes('.')) {
+    // e.g. "https://dhaka-tesla-pool-api-fed0"
+    value = `${value}.onrender.com`;
+  }
+  return value;
 }
 
 const API_BASE = resolveApiBase(process.env.NEXT_PUBLIC_API_URL);
