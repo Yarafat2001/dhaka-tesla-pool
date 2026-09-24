@@ -1,4 +1,20 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+// `NEXT_PUBLIC_API_URL` is inlined by Next.js at build time (see
+// frontend/Dockerfile and docs/deployment.md), so this value is baked into the
+// bundle - it is not read from the environment at runtime.
+// Two shapes have to be tolerated:
+//   - an explicit origin: "http://localhost:4100", "https://api.example.com"
+//   - a bare host: Render's blueprint `fromService.property: host` resolves to
+//     "dhaka-tesla-pool-api.onrender.com" with no scheme, and `fetch()` treats a
+//     scheme-less URL as a path *relative to the current origin* - the web app
+//     would then call itself and every API request would 404 against Next.js.
+// A trailing slash is trimmed so `${API_BASE}${path}` never yields "//api".
+function resolveApiBase(raw: string | undefined): string {
+  const value = (raw ?? '').trim().replace(/\/+$/, '');
+  if (!value) return 'http://localhost:4000';
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
+const API_BASE = resolveApiBase(process.env.NEXT_PUBLIC_API_URL);
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;

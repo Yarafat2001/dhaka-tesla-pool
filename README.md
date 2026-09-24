@@ -122,7 +122,7 @@ here, and why:
 | Auth | JWT | Session + Redis store | Stateless, no extra infra container in Docker Compose, fits a small API | A product needing instant token revocation would need sessions or short-lived + refresh tokens |
 | Frontend | Next.js (App Router) + plain CSS | Create React App, heavy UI kit (MUI etc.) | Brief recommends Next.js; plain CSS keeps the bundle small and every style decision explicit for an interview walkthrough | A larger design system would justify a component library |
 | Tests | Jest, plus Supertest for the API/DB integration suite | Vitest, Mocha | Standard, zero-config with ts-jest, well understood; Supertest exercises the real Express app against real Postgres for the tests that pure units can't prove (authorization, live concurrency) | N/A |
-| Hosting | Docker Compose (local reproducible deploy) | Free-tier PaaS (Render/Railway) | Guaranteed free, zero external dependency, evaluator runs `docker compose up` and it works | A public deployment link once a free backend host is confirmed working, per Section 6 |
+| Hosting | Render free tier via `render.yaml` (Compose remains the local, reproducible path) | Free-tier PaaS (Railway, Fly.io) | One link stands the whole stack up - free Postgres plus both images - with no manual wiring; Compose still proves it end to end on any machine | A paid instance if the demo had to survive Render's 30-day free-Postgres expiry or cold starts |
 
 ## Fare model
 
@@ -167,7 +167,8 @@ dhaka-tesla-pool/
 │   └── lib/api.ts              # typed API client + JWT storage
 ├── docs/                       # architecture, ERD, fare model, concurrency,
 │                                # scaling bonus, deployment, screenshots
-└── docker-compose.yml
+├── docker-compose.yml          # local reproducible stack
+└── render.yaml                 # one-click free-tier deploy (db + api + web)
 ```
 
 ## Prerequisites
@@ -446,14 +447,43 @@ trade-off), and a product tour._
 
 ## Deployment
 
-No paid infrastructure was used (Section 16). The reproducible deployment is the
-Docker Compose setup documented above; **[`docs/deployment.md`](docs/deployment.md)**
-adds concrete free-tier steps (Render web services + Neon Postgres, or Fly.io),
-the environment variables each one needs, and how to verify a deployment.
+No paid infrastructure was used (Section 16), and nothing needs to be: the repo
+deploys as-is to **Render's free tier**, and the reproducible local path is the
+Docker Compose setup documented above.
 
-A public URL would be added here once a free tier is provisioned - that is the
-one step in this repo that needs a human with an account, which is why the
-constraint is documented rather than hidden.
+**Live deployment (`render.yaml` blueprint).** The blueprint at the repo root
+declares the whole stack - free Postgres, the API image, the web image - so
+standing it up is one link plus a GitHub login:
+
+> **Deploy:** <https://render.com/deploy?repo=https://github.com/Yarafat2001/dhaka-tesla-pool>
+
+- **Web app:** `https://<your-web-service>.onrender.com` — _fill in after the
+  blueprint finishes its first deploy._
+- **API:** `https://<your-api-service>.onrender.com/health` → `{"status":"ok"}`
+
+The blueprint link rather than a URL is what is committed here, and the reason is
+honest rather than a dodge: creating the account and clicking **Apply** is the one
+step that needs a human, and no credentials for a hosting provider exist in this
+repo. Everything around it is automated - `render.yaml` wires `DATABASE_URL` from
+the database it creates, has Render generate `JWT_SECRET`, points the frontend at
+the API's host, and passes that host into the Next.js build (where
+`NEXT_PUBLIC_API_URL` gets inlined, with `frontend/lib/api.ts` adding the
+`https://` scheme that `fromService.property: host` leaves off). The API image
+runs `prisma migrate deploy && npm run seed && npm start` on each boot, so the
+schema and the demo cast exist on the first request.
+
+Two free-tier facts to know before the link is handed to a reviewer (they are
+also why the demo state is seeded, not precious):
+
+- free **Postgres expires 30 days after creation** - re-create it (or move that
+  piece to Neon) to keep the demo alive longer, and
+- free **web services spin down after ~15 minutes idle**, so the first page load
+  after a quiet spell takes a cold start and may need a reload.
+
+**[`docs/deployment.md`](docs/deployment.md)** has the full walkthrough: the
+blueprint steps, a by-hand Render + Neon variant, the environment variables each
+one needs, and how to verify a deployment (`/health`, `/api/zones`, then the
+Nusrat/Jashim demo story).
 
 ## Version
 
