@@ -63,6 +63,12 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
     autoDeploy: true
+    # Custom domain: www.dhaka-tesla-pool.com (plus apex, which redirects
+    # to www in the app). Render provisions and renews TLS automatically
+    # once the DNS records below exist. See docs/deployment.md §6.
+    domains:
+      - www.dhaka-tesla-pool.com
+      - dhaka-tesla-pool.com
     envVars:
       # Resolved by Render to the API service's host (no scheme); Next.js
       # inlines it during the Docker build, and frontend/lib/api.ts adds the

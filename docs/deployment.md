@@ -80,6 +80,43 @@ push.
 4. Copy the web service's URL (`https://<name>.onrender.com`) into the README's
    deployment section. That is the public "Live Project Link".
 
+### Option A2 - Custom domain `www.dhaka-tesla-pool.com` (needs the domain)
+
+The blueprint already declares both hostnames on the web service
+(`render.yaml` -> `dhaka-tesla-pool-web` -> `domains:`), so once the blueprint
+above is applied Render shows the domain as pending and waits for DNS.
+Nothing else has to change in the repo: TLS is issued and renewed by Render
+automatically, and the apex redirects to `www` in the app
+(`frontend/next.config.js`), so the site has one canonical address.
+
+1. **Buy the domain** from any registrar (Namecheap, Cloudflare Registrar,
+   Porkbun, ...). This is the one step that costs money (~$10-12/yr) and
+   cannot be automated from the repo.
+2. **Point DNS at Render.** In the Render dashboard, open the
+   `dhaka-tesla-pool-web` service -> **Settings** -> **Custom Domains**;
+   Render shows the exact target values (they look like this):
+   - `www` -> CNAME to the web service's `.onrender.com` hostname
+     (e.g. `dhaka-tesla-pool-web-xxxx.onrender.com`). Render then verifies
+     `www.dhaka-tesla-pool.com` and issues its certificate.
+   - apex (`dhaka-tesla-pool.com`) -> `ALIAS`/`ANAME` to the same hostname if
+     the registrar supports it; otherwise an `A` record to the IP(s) Render
+     shows. The app redirects apex to `www`, so both work.
+3. **Wait for verification.** Render polls DNS, issues the certificate, and
+   flips the domain to verified (usually minutes; DNS propagation can take
+   longer). From then on `https://www.dhaka-tesla-pool.com/login` is the live
+   app, with HTTP auto-redirected to HTTPS.
+4. Paste `https://www.dhaka-tesla-pool.com` into the README's Deployment
+   section as the Live Project Link.
+
+Notes:
+
+- The `.onrender.com` URL keeps working alongside the custom domain - useful
+  as a fallback while DNS propagates.
+- Keep DNS pointing at Render (plain registrar DNS or DNS-only mode). Do not
+  put the apex behind a proxy that points elsewhere.
+- Free workspaces include 2 custom domains, so this costs nothing extra on
+  Render's side.
+
 What it creates:
 
 | Piece | Detail |
