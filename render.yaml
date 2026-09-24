@@ -74,6 +74,7 @@ services:
     domains:
       - www.dhaka-tesla-pool.com
       - dhaka-tesla-pool.com
+      - dhaka-tesla-pool.duckdns.org
     envVars:
       # Resolved by Render to the API service's host (no scheme); Next.js
       # inlines it during the Docker build, and frontend/lib/api.ts adds the
