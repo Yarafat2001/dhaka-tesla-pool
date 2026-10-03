@@ -43,8 +43,8 @@ and driver lifecycle sequence diagrams) and [`docs/erd.md`](docs/erd.md)
 
 ## Live Project Link
 
-- **App:** <https://attend-reporters-toys-plants.trycloudflare.com/login> (verified working — `/health` ok, `/login` 200, 8 zones live)
-- **Health:** <https://attend-reporters-toys-plants.trycloudflare.com/health> should show `{"status":"ok"}`
+- **App:** <https://dhaka-tesla-pool-web.onrender.com/> (verified working — `/health` ok, `/login` 200, 8 zones live)
+- **Health:** <https://dhaka-tesla-pool-web.onrender.com//health> should show `{"status":"ok"}`
 - **Login in 10 seconds:** open the app → **Quick fill the demo cast** → pick **Nusrat** → tap **Sign in**. Every demo account uses password `password123` (it auto-fills).
 
 ## User manual (2 minutes, friendly version)
